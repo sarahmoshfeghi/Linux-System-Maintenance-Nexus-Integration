@@ -1,0 +1,6 @@
+---
+- name: Execute Infrastructure Systems Maintenance
+  hosts: all
+  become: true
+  roles:
+    - system_maintenance
