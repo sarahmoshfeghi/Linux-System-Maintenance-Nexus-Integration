@@ -1,0 +1,12 @@
+---
+- name: Handle Package Repository Updates
+  include_tasks: repo_update.yml
+  tags: [repos, system]
+
+- name: Handle Kernel Upgrades and Maintenance
+  include_tasks: kernel_upgrade.yml
+  tags: [kernel, system]
+
+- name: Handle Sonatype Nexus Lifecycle
+  include_tasks: nexus_oss.yml
+  tags: [nexus, tools]
