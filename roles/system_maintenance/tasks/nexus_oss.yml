@@ -1,0 +1,87 @@
+---
+# ==============================================================================
+# REMOVE BLOCK
+# ==============================================================================
+- name: "Nexus | Stop and Remove Service"
+  block:
+    - name: Stop Nexus Service
+      ansible.builtin.systemd:
+        name: nexus
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Delete Nexus Installation files (Preserves Data Directories)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/systemd/system/nexus.service
+        - "{{ nexus_installation_dir }}"
+  when: nexus_state == 'absent'
+
+# ==============================================================================
+# ADD / UPDATE BLOCK
+# ==============================================================================
+- name: "Nexus | Install / Upgrade Block"
+  block:
+    - name: Create nexus OS user
+      ansible.builtin.user:
+        name: nexus
+        shell: /bin/bash
+        system: true
+
+    - name: Ensure target directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: nexus
+        group: nexus
+        mode: '0755'
+      loop:
+        - "{{ nexus_installation_dir }}"
+        - "{{ nexus_data_dir }}"
+
+    - name: Download Nexus OSS Distribution
+      ansible.builtin.unarchive:
+        src: "https://download.sonatype.com/nexus/3/nexus-{{ nexus_version }}-unix.tar.gz"
+        dest: "{{ nexus_installation_dir }}"
+        remote_src: true
+        owner: nexus
+        group: nexus
+        extra_opts: [--strip-components=1]
+        creates: "{{ nexus_installation_dir }}/bin/nexus"
+
+    - name: Set run_as_user configuration inside Nexus scripts
+      ansible.builtin.lineinfile:
+        path: "{{ nexus_installation_dir }}/bin/nexus.rc"
+        regexp: '^#?run_as_user='
+        line: 'run_as_user="nexus"'
+
+    - name: Configure Nexus Systemd Service Unit
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/nexus.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=nexus service
+          After=network.target
+
+          [Service]
+          Type=forking
+          LimitNOFILE=65536
+          ExecStart={{ nexus_installation_dir }}/bin/nexus start
+          ExecStop={{ nexus_installation_dir }}/bin/nexus stop
+          User=nexus
+          Restart=on-abort
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start Nexus Service
+      ansible.builtin.systemd:
+        name: nexus
+        state: started
+        daemon_reload: true
+        enabled: true
+  when: nexus_state == 'present'
