@@ -12,3 +12,18 @@ An Infrastructure as Code pipeline designed to automate Linux operating system p
 ### Trigger everything matching configurations:
 ```bash
 ansible-playbook -i inventory.ini site.yml
+
+linux-system-maintenance/
+├── README.md
+├── site.yml
+├── inventory.ini
+├── Jenkinsfile
+└── roles/
+    └── system_maintenance/
+        ├── defaults/
+        │   └── main.yml
+        └── tasks/
+            ├── main.yml
+            ├── repo_update.yml      # Package Manager Repositories (APT/YUM)
+            ├── kernel_upgrade.yml   # Linux Kernel Management & Reboot
+            └── nexus_oss.yml        # Sonatype Nexus Repository Manager OSS
