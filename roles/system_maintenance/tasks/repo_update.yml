@@ -1,0 +1,20 @@
+---
+- name: "Repo Update | Refresh and clean cache for Debian/Ubuntu"
+  block:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        force_apt_get: yes
+
+    - name: Upgrade all safe base distribution packages
+      ansible.builtin.apt:
+        upgrade: safe
+  when: ansible_os_family == "Debian" and manage_repos == "present"
+
+- name: "Repo Update | Refresh and clean cache for RedHat/CentOS/RHEL"
+  block:
+    - name: Clean package manager cache
+      ansible.builtin.yum:
+        list: updates
+        update_cache: yes
+  when: ansible_os_family == "RedHat" and manage_repos == "present"
