@@ -1,0 +1,13 @@
+---
+# Toggle states: 'present' to apply/install/upgrade, 'absent' to skip or remove
+manage_repos: "present"
+upgrade_kernel: "present"
+nexus_state: "present"
+
+# Configurations
+nexus_version: "3.70.1-02"
+nexus_installation_dir: "/opt/nexus"
+nexus_data_dir: "/sonatype-work/nexus3"
+
+# System Settings
+reboot_after_kernel_upgrade: true
