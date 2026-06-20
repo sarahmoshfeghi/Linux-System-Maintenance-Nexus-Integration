@@ -1,0 +1,31 @@
+---
+- name: "Kernel | Upgrade Kernel on Debian/Ubuntu systems"
+  ansible.builtin.apt:
+    name: linux-image-generic
+    state: latest
+    update_cache: yes
+  register: apt_kernel_result
+  when: ansible_os_family == "Debian" and upgrade_kernel == "present"
+
+- name: "Kernel | Upgrade Kernel on RedHat/RHEL systems"
+  ansible.builtin.yum:
+    name: kernel
+    state: latest
+  register: yum_kernel_result
+  when: ansible_os_family == "RedHat" and upgrade_kernel == "present"
+
+# Determine if a reboot is actually required based on package changes
+- name: "Kernel | Check if reboot is required"
+  ansible.builtin.set_fact:
+    needs_reboot: >-
+      (apt_kernel_result.changed is defined and apt_kernel_result.changed) or
+      (yum_kernel_result.changed is defined and yum_kernel_result.changed)
+
+- name: "Kernel | Trigger Server Reboot"
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible due to a Kernel upgrade."
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 2
+    post_reboot_delay: 30
+  when: upgrade_kernel == "present" and reboot_after_kernel_upgrade and needs_reboot
